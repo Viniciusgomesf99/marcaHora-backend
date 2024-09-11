@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 
-mongoose.connect('mongodb+srv://pachenkoKING:<db_password>@marcahora.zkhue.mongodb.net/marcaHora?retryWrites=true&w=majority&appName=marcaHora', {
+// Carregando as variáveis de ambiente do arquivo .env
+dotenv.config();
+
+// Conectando ao MongoDB usando a variável de ambiente
+mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => {
