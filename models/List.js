@@ -26,7 +26,7 @@ const listSchema = new mongoose.Schema({
   },
   password: String, // Se necessário
   daysAndTimes: {
-    type: Map,
+    type: Object, // Troquei Map por Object
     of: [
       {
         time: String,

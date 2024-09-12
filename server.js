@@ -138,15 +138,15 @@ app.post('/reserve-time', async (req, res) => {
     const list = await List.findOne({ id: listId });
 
     if (list) {
-      // Verifica se o dia existe no objeto daysAndTimes como um objeto e não Map
-      const availableTimesForDay = list.daysAndTimes[day];
+      // Verifica se o dia existe no objeto daysAndTimes
+      const availableTimesForDay = list.daysAndTimes[day]; // Acessando como objeto comum agora
       
       if (!availableTimesForDay) {
         return res.status(400).send({ message: 'Dia não disponível para reservas.' });
       }
 
       // Verificar se o CPF já reservou algum horário, exceto se allowMultipleSelections estiver ativo
-      const userHasReservedOnDay = availableTimesForDay.some(slot =>
+      const userHasReservedOnDay = availableTimesForDay.some(slot => 
         slot.reservedBy && slot.reservedBy.some(reservation => reservation.cpf === cpf)
       );
 
@@ -174,7 +174,6 @@ app.post('/reserve-time', async (req, res) => {
 
         // NÃO REMOVA o horário se as vagas se esgotarem, apenas marque como cheio
         if (timeSlot.remaining === 0) {
-          // Opcional: Marcar como "indisponível", sem excluir
           timeSlot.full = true; // Você pode adicionar uma flag 'full' para marcar horários completos
         }
 
