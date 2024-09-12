@@ -136,25 +136,25 @@ app.post('/reserve-time', async (req, res) => {
   try {
     // Buscar a lista no MongoDB
     const list = await List.findOne({ id: listId });
-    console.log('list', list);
+
     if (list) {
+      // Adicionando um log para verificar se o dia está corretamente na lista
+      console.log("Dias disponíveis na lista:", list.daysAndTimes);
+
       // Verifica se o dia existe no objeto daysAndTimes
-      if (!list.daysAndTimes[day]) {
+      if (!list.daysAndTimes || !list.daysAndTimes.get(day)) {
         return res.status(400).send({ message: 'Dia não disponível para reservas.' });
       }
 
-      console.log('list.daysAndTimes[day]', list.daysAndTimes[day]);
-
       // Verifica se o usuário já reservou esse horário
-      const userHasReservedThisTime = list.daysAndTimes[day].some(slot => slot.time === time && slot.reservedBy && slot.reservedBy.includes(userName));
-      console.log('userHasReservedThisTime', userHasReservedThisTime);
+      const userHasReservedThisTime = list.daysAndTimes.get(day).some(slot => slot.time === time && slot.reservedBy && slot.reservedBy.includes(userName));
 
       if (userHasReservedThisTime) {
         return res.status(400).send({ message: 'Você já reservou esse horário.' });
       }
 
       // Encontrar o timeSlot no dia especificado
-      const timeSlot = list.daysAndTimes[day].find(t => t.time === time);
+      const timeSlot = list.daysAndTimes.get(day).find(t => t.time === time);
 
       if (timeSlot && timeSlot.remaining > 0) {
         // Verifica se o horário já está reservado por outro usuário e se múltiplas reservas são permitidas
@@ -171,12 +171,12 @@ app.post('/reserve-time', async (req, res) => {
         }
         timeSlot.reservedBy.push(userName);
 
-        // Remove o horário caso o limite de reservas tenha sido atingido
         if (timeSlot.remaining === 0) {
-          list.daysAndTimes[day] = list.daysAndTimes[day].filter(t => t.time !== time);
+          // Remove o horário se as vagas se esgotarem
+          list.daysAndTimes.set(day, list.daysAndTimes.get(day).filter(t => t.time !== time));
         }
 
-        // Salvar a lista atualizada no MongoDB
+        // Salvar as alterações no MongoDB
         await list.save();
         res.send({ message: `Horário ${time} reservado por ${userName}` });
       } else {
