@@ -139,7 +139,9 @@ app.post('/reserve-time', async (req, res) => {
 
     if (list) {
       // Verifica se o dia existe no objeto daysAndTimes como um objeto e não Map
-      if (!list.daysAndTimes || !list.daysAndTimes(day)) {
+      const availableTimesForDay = list.daysAndTimes[day];
+      
+      if (!availableTimesForDay) {
         return res.status(400).send({ message: 'Dia não disponível para reservas.' });
       }
 
@@ -153,7 +155,7 @@ app.post('/reserve-time', async (req, res) => {
       }
 
       // Encontrar o timeSlot no dia especificado
-      const timeSlot = list.daysAndTimes[day].find(t => t.time === time);
+      const timeSlot = availableTimesForDay.find(t => t.time === time);
 
       if (timeSlot && timeSlot.remaining > 0) {
         // Verifica se o horário já está reservado por outro usuário e se múltiplas reservas são permitidas
