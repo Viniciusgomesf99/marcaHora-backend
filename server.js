@@ -31,10 +31,10 @@ app.get('/', (req, res) => {
 });
 
 app.post('/create-list', async (req, res) => {
-  const { name, password, days, daysAndTimes, allowMultipleSelections, allowMultipleBookings, maxSelectionsPerPerson } = req.body;
+  const { name, password, days, daysAndTimes, allowMultipleSelections, maxSelectionsPerPerson } = req.body;
 
   // Define o limite de reservas por horário com base no `maxSelectionsPerPerson`
-  const maxReservationsPerTime = allowMultipleBookings ? Infinity : maxSelectionsPerPerson || 1;
+  const maxReservationsPerTime = 1;
 
   // Prepara o formato correto de `daysAndTimes`
   const formattedDaysAndTimes = {};
@@ -50,7 +50,6 @@ app.post('/create-list', async (req, res) => {
     days,
     daysAndTimes: formattedDaysAndTimes,
     allowMultipleSelections,
-    allowMultipleBookings,
     maxSelectionsPerPerson,
   });
 
@@ -166,7 +165,7 @@ app.post('/reserve-time', async (req, res) => {
       const timeSlot = availableTimesForDay.find(t => t.time === time);
 
       if (timeSlot && timeSlot.remaining > 0) {
-        if (!list.allowMultipleBookings && timeSlot.reservedBy && timeSlot.reservedBy.length > 0) {
+        if (timeSlot.reservedBy && timeSlot.reservedBy.length > 0) {
           return res.status(400).send({ message: 'Horário já reservado por outro usuário.' });
         }
 
