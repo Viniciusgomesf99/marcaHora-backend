@@ -3,7 +3,6 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
 import List from './models/List.js'; // Certifique-se de incluir a extensão '.js'
-import cors from 'cors';
 
 const app = express();
 const port = process.env.PORT || 3001;
