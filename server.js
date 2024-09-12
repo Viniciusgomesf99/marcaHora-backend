@@ -30,29 +30,34 @@ app.get('/', (req, res) => {
   res.send('Backend funcionando!');
 });
 
-app.post('/create-list', (req, res) => {
+app.post('/create-list', async (req, res) => {
   const { name, daysAndTimes, allowMultipleSelections, allowMultipleBookings, maxSelectionsPerPerson } = req.body;
 
   // Define o limite de reservas por horário com base no `maxSelectionsPerPerson`
   const maxReservationsPerTime = allowMultipleBookings ? Infinity : maxSelectionsPerPerson || 1;
 
-  const newList = {
+  const newList = new List({
     id: uuidv4(),
     name,
     daysAndTimes: {},
-    days: Object.keys(daysAndTimes), // Cria o array de dias
+    days: Object.keys(daysAndTimes), // Mantém essa parte, como solicitado
     allowMultipleSelections,
     allowMultipleBookings,
     maxSelectionsPerPerson // Agora estamos armazenando `maxSelectionsPerPerson` na lista
-  };
+  });
 
   for (const [day, times] of Object.entries(daysAndTimes)) {
     newList.daysAndTimes[day] = times.map(time => ({ time, remaining: maxReservationsPerTime }));
   }
 
-  lists.push(newList);
-  console.log("Nova lista criada:", newList); // Adicione logs para verificação
-  res.status(201).send({ message: 'Lista criada com sucesso!', list: newList });
+  try {
+    await newList.save();
+    console.log("Nova lista criada:", newList);  // Log para verificação
+    res.status(201).send({ message: 'Lista criada com sucesso!', list: newList });
+  } catch (error) {
+    console.error('Erro ao salvar a lista no MongoDB:', error);
+    res.status(500).send({ message: 'Erro ao criar a lista.' });
+  }
 });
 
 app.get('/view-list/:id', (req, res) => {
@@ -114,41 +119,50 @@ app.post('/end-list', async (req, res) => {
   }
 });
 
-app.post('/reserve-time', (req, res) => {
+app.post('/reserve-time', async (req, res) => {
   const { listId, day, time, userName } = req.body;
-  const list = lists.find(list => list.id === listId);
 
-  if (list) {
-    const userHasReservedThisTime = list.daysAndTimes[day].some(slot => slot.time === time && slot.reservedBy && slot.reservedBy.includes(userName));
+  try {
+    // Buscar a lista no MongoDB
+    const list = await List.findOne({ id: listId });
 
-    if (userHasReservedThisTime) {
-      return res.status(400).send({ message: 'Você já reservou esse horário.' });
-    }
+    if (list) {
+      const userHasReservedThisTime = list.daysAndTimes[day].some(slot => slot.time === time && slot.reservedBy && slot.reservedBy.includes(userName));
 
-    const timeSlot = list.daysAndTimes[day].find(t => t.time === time);
-    
-    if (timeSlot && timeSlot.remaining > 0) {
-      if (!list.allowMultipleBookings && timeSlot.reservedBy && timeSlot.reservedBy.length > 0) {
-        return res.status(400).send({ message: 'Horário já reservado por outro usuário.' });
+      if (userHasReservedThisTime) {
+        return res.status(400).send({ message: 'Você já reservou esse horário.' });
       }
 
-      timeSlot.remaining -= 1;
+      const timeSlot = list.daysAndTimes[day].find(t => t.time === time);
 
-      if (!timeSlot.reservedBy) {
-        timeSlot.reservedBy = [];
+      if (timeSlot && timeSlot.remaining > 0) {
+        if (!list.allowMultipleBookings && timeSlot.reservedBy && timeSlot.reservedBy.length > 0) {
+          return res.status(400).send({ message: 'Horário já reservado por outro usuário.' });
+        }
+
+        timeSlot.remaining -= 1;
+
+        if (!timeSlot.reservedBy) {
+          timeSlot.reservedBy = [];
+        }
+        timeSlot.reservedBy.push(userName);
+
+        if (timeSlot.remaining === 0) {
+          list.daysAndTimes[day] = list.daysAndTimes[day].filter(t => t.time !== time);
+        }
+
+        // Salvar as alterações na lista no MongoDB
+        await list.save();
+        res.send({ message: `Horário ${time} reservado por ${userName}` });
+      } else {
+        res.status(400).send({ message: 'Horário já atingiu o limite de reservas ou não está disponível.' });
       }
-      timeSlot.reservedBy.push(userName);
-
-      if (timeSlot.remaining === 0) {
-        list.daysAndTimes[day] = list.daysAndTimes[day].filter(t => t.time !== time);
-      }
-
-      res.send({ message: `Horário ${time} reservado por ${userName}` });
     } else {
-      res.status(400).send({ message: 'Horário já atingiu o limite de reservas ou não está disponível.' });
+      res.status(404).send({ message: 'Lista não encontrada.' });
     }
-  } else {
-    res.status(404).send({ message: 'Lista não encontrada.' });
+  } catch (error) {
+    console.error('Erro ao fazer a reserva:', error);
+    res.status(500).send({ message: 'Erro ao fazer a reserva.' });
   }
 });
 

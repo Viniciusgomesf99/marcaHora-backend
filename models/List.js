@@ -16,10 +16,44 @@ mongoose.connect(process.env.MONGO_URI, {
 
 // Definindo o esquema da lista
 const listSchema = new mongoose.Schema({
-  id: String,
-  name: String,
-  password: String,
-  items: Array
+  id: {
+    type: String,
+    required: true,
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  password: {
+    type: String, // Se você precisar de senha para acesso à lista
+  },
+  daysAndTimes: {
+    type: Map,
+    of: [
+      {
+        time: String,
+        remaining: Number,
+        reservedBy: [String] // Lista de usuários que reservaram este horário
+      }
+    ],
+    required: true,
+  },
+  allowMultipleSelections: {
+    type: Boolean,
+    default: false,
+  },
+  allowMultipleBookings: {
+    type: Boolean,
+    default: false,
+  },
+  maxSelectionsPerPerson: {
+    type: Number,
+    default: 1, // Valor padrão de 1 caso não seja especificado
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  }
 });
 
 // Criando o modelo List
