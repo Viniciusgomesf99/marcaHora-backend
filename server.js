@@ -134,18 +134,16 @@ app.post('/reserve-time', async (req, res) => {
   const { listId, day, time, userName, cpf } = req.body;
 
   try {
-    // Buscar a lista no MongoDB
     const list = await List.findOne({ id: listId });
 
     if (list) {
-      // Verifica se o dia existe no objeto daysAndTimes
-      const availableTimesForDay = list.daysAndTimes[day]; // Acessando como objeto comum agora
+      const availableTimesForDay = list.daysAndTimes[day];
 
       if (!availableTimesForDay) {
         return res.status(400).send({ message: 'Dia não disponível para reservas.' });
       }
 
-      // Verificar se o CPF já reservou algum horário em qualquer dia, exceto se allowMultipleSelections estiver ativo
+      // Verificar se o CPF já fez alguma reserva em qualquer dia se `allowMultipleSelections` for `false`
       if (!list.allowMultipleSelections) {
         const userHasReservedAnyTime = Object.values(list.daysAndTimes).some(daySlots =>
           daySlots.some(slot => slot.reservedBy && slot.reservedBy.some(reservation => reservation.cpf === cpf))
@@ -154,35 +152,36 @@ app.post('/reserve-time', async (req, res) => {
         if (userHasReservedAnyTime) {
           return res.status(400).send({ message: 'Você já reservou um horário.' });
         }
+      } else {
+        // Se `allowMultipleSelections` for `true`, verificamos o limite de reservas do usuário
+        const totalReservationsForUser = Object.values(list.daysAndTimes).reduce((count, daySlots) =>
+          count + daySlots.filter(slot => slot.reservedBy && slot.reservedBy.some(reservation => reservation.cpf === cpf)).length, 0
+        );
+
+        if (totalReservationsForUser >= list.maxSelectionsPerPerson) {
+          return res.status(400).send({ message: `Você já atingiu o limite de ${list.maxSelectionsPerPerson} reservas.` });
+        }
       }
 
-      // Encontrar o timeSlot no dia especificado
       const timeSlot = availableTimesForDay.find(t => t.time === time);
 
       if (timeSlot && timeSlot.remaining > 0) {
-        // Verifica se o horário já está reservado por outro usuário e se múltiplas reservas são permitidas
         if (!list.allowMultipleBookings && timeSlot.reservedBy && timeSlot.reservedBy.length > 0) {
           return res.status(400).send({ message: 'Horário já reservado por outro usuário.' });
         }
 
-        // Atualiza o número de vagas restantes
         timeSlot.remaining -= 1;
 
-        // Adiciona o usuário à lista de reservas com CPF
         if (!timeSlot.reservedBy) {
           timeSlot.reservedBy = [];
         }
-        timeSlot.reservedBy.push({ userName, cpf }); // Adiciona o nome e CPF do usuário
+        timeSlot.reservedBy.push({ userName, cpf });
 
-        // NÃO REMOVA o horário se as vagas se esgotarem, apenas marque como cheio
         if (timeSlot.remaining === 0) {
-          timeSlot.full = true; // Você pode adicionar uma flag 'full' para marcar horários completos
+          timeSlot.full = true;
         }
 
-        // **Força Mongoose a detectar as alterações**
         list.markModified('daysAndTimes');
-
-        // Salvar as alterações no MongoDB
         await list.save();
         res.send({ message: `Horário ${time} reservado por ${userName}` });
       } else {
