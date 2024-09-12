@@ -131,7 +131,7 @@ app.post('/end-list', async (req, res) => {
 });
 
 app.post('/reserve-time', async (req, res) => {
-  const { listId, day, time, userName } = req.body;
+  const { listId, day, time, userName, cpf } = req.body;
 
   try {
     // Buscar a lista no MongoDB
@@ -143,11 +143,13 @@ app.post('/reserve-time', async (req, res) => {
         return res.status(400).send({ message: 'Dia não disponível para reservas.' });
       }
 
-      // Verifica se o usuário já reservou esse horário
-      const userHasReservedThisTime = list.daysAndTimes.get(day).some(slot => slot.time === time && slot.reservedBy && slot.reservedBy.includes(userName));
+      // Verificar se o CPF já reservou algum horário, exceto se allowMultipleSelections estiver ativo
+      const userHasReservedOnDay = Object.values(list.daysAndTimes.get(day)).some(slot => 
+        slot.reservedBy && slot.reservedBy.some(reservation => reservation.cpf === cpf)
+      );
 
-      if (userHasReservedThisTime) {
-        return res.status(400).send({ message: 'Você já reservou esse horário.' });
+      if (userHasReservedOnDay && !list.allowMultipleSelections) {
+        return res.status(400).send({ message: 'Você já reservou um horário para este dia.' });
       }
 
       // Encontrar o timeSlot no dia especificado
@@ -162,11 +164,11 @@ app.post('/reserve-time', async (req, res) => {
         // Atualiza o número de vagas restantes
         timeSlot.remaining -= 1;
 
-        // Adiciona o usuário à lista de reservas
+        // Adiciona o usuário à lista de reservas com CPF
         if (!timeSlot.reservedBy) {
           timeSlot.reservedBy = [];
         }
-        timeSlot.reservedBy.push(userName); // Adiciona o nome do usuário que fez a reserva
+        timeSlot.reservedBy.push({ userName, cpf }); // Adiciona o nome e CPF do usuário
 
         // NÃO REMOVA o horário se as vagas se esgotarem, apenas marque como cheio
         if (timeSlot.remaining === 0) {
