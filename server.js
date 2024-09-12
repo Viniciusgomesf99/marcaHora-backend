@@ -140,18 +140,20 @@ app.post('/reserve-time', async (req, res) => {
     if (list) {
       // Verifica se o dia existe no objeto daysAndTimes
       const availableTimesForDay = list.daysAndTimes[day]; // Acessando como objeto comum agora
-      
+
       if (!availableTimesForDay) {
         return res.status(400).send({ message: 'Dia não disponível para reservas.' });
       }
 
-      // Verificar se o CPF já reservou algum horário, exceto se allowMultipleSelections estiver ativo
-      const userHasReservedOnDay = availableTimesForDay.some(slot => 
-        slot.reservedBy && slot.reservedBy.some(reservation => reservation.cpf === cpf)
-      );
+      // Verificar se o CPF já reservou algum horário em qualquer dia, exceto se allowMultipleSelections estiver ativo
+      if (!list.allowMultipleSelections) {
+        const userHasReservedAnyTime = Object.values(list.daysAndTimes).some(daySlots =>
+          daySlots.some(slot => slot.reservedBy && slot.reservedBy.some(reservation => reservation.cpf === cpf))
+        );
 
-      if (userHasReservedOnDay && !list.allowMultipleSelections) {
-        return res.status(400).send({ message: 'Você já reservou um horário para este dia.' });
+        if (userHasReservedAnyTime) {
+          return res.status(400).send({ message: 'Você já reservou um horário.' });
+        }
       }
 
       // Encontrar o timeSlot no dia especificado
