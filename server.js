@@ -5,13 +5,13 @@ import { v4 as uuidv4 } from 'uuid';
 import List from './models/List.js'; // Certifique-se de incluir a extensão '.js'
 import cors from 'cors';
 
+const app = express();
+const port = process.env.PORT || 3001;
+
 app.use(cors({
   origin: 'https://marca-hora.vercel.app', // URL do seu frontend
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
 }));
-
-const app = express();
-const port = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(bodyParser.json());
