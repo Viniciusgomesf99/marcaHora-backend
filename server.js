@@ -136,15 +136,18 @@ app.post('/reserve-time', async (req, res) => {
   try {
     // Buscar a lista no MongoDB
     const list = await List.findOne({ id: listId });
-
+    console.log('list', list);
     if (list) {
       // Verifica se o dia existe no objeto daysAndTimes
       if (!list.daysAndTimes[day]) {
         return res.status(400).send({ message: 'Dia não disponível para reservas.' });
       }
 
+      console.log('list.daysAndTimes[day]', list.daysAndTimes[day]);
+
       // Verifica se o usuário já reservou esse horário
       const userHasReservedThisTime = list.daysAndTimes[day].some(slot => slot.time === time && slot.reservedBy && slot.reservedBy.includes(userName));
+      console.log('userHasReservedThisTime', userHasReservedThisTime);
 
       if (userHasReservedThisTime) {
         return res.status(400).send({ message: 'Você já reservou esse horário.' });
