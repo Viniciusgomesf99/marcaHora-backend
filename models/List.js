@@ -25,20 +25,20 @@ const listSchema = new mongoose.Schema({
     required: true,
   },
   password: {
-    type: String, // Se você precisar de senha para acesso à lista
+    type: String,
+    required: true, // Tornando a senha obrigatória, já que está no objeto do frontend
+  },
+  days: {
+    type: [String], // Array de dias
+    required: true,
   },
   daysAndTimes: {
     type: Map,
-    of: {
-      type: Array,
-      items: {
-        type: new mongoose.Schema({
-          time: String,
-          remaining: Number,
-          reservedBy: [String], // Lista de usuários que reservaram este horário
-        }),
-      },
-    },
+    of: [{
+      time: String,
+      remaining: Number,
+      reservedBy: [String], // Usuários que reservaram este horário
+    }],
     required: true,
   },
   allowMultipleSelections: {

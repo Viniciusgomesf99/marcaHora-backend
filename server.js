@@ -31,26 +31,27 @@ app.get('/', (req, res) => {
 });
 
 app.post('/create-list', async (req, res) => {
-  const { name, daysAndTimes, allowMultipleSelections, allowMultipleBookings, maxSelectionsPerPerson } = req.body;
+  const { name, password, days, daysAndTimes, allowMultipleSelections, allowMultipleBookings, maxSelectionsPerPerson } = req.body;
 
   // Define o limite de reservas por horário com base no `maxSelectionsPerPerson`
   const maxReservationsPerTime = allowMultipleBookings ? Infinity : maxSelectionsPerPerson || 1;
 
-  // Inicia `daysAndTimes` como um objeto normal
+  // Prepara o formato correto de `daysAndTimes`
   const formattedDaysAndTimes = {};
 
-  // Popula `formattedDaysAndTimes` com os horários e reservas
   for (const [day, times] of Object.entries(daysAndTimes)) {
-    formattedDaysAndTimes[day] = times.map(time => ({ time, remaining: maxReservationsPerTime }));
+    formattedDaysAndTimes[day] = times.map(time => ({ time, remaining: maxReservationsPerTime, reservedBy: [] }));
   }
 
   const newList = new List({
     id: uuidv4(),
     name,
-    daysAndTimes: formattedDaysAndTimes, // Agora estamos passando o objeto corretamente
+    password,
+    days,
+    daysAndTimes: formattedDaysAndTimes,
     allowMultipleSelections,
     allowMultipleBookings,
-    maxSelectionsPerPerson // Agora estamos armazenando `maxSelectionsPerPerson` na lista
+    maxSelectionsPerPerson,
   });
 
   try {
