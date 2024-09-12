@@ -8,10 +8,19 @@ import cors from 'cors';
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(cors({
-  origin: 'https://marca-hora.vercel.app', // URL do seu frontend
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
-}));
+// Configuração de CORS para permitir requisições do seu frontend
+const corsOptions = {
+  origin: 'https://marca-hora.vercel.app', // URL do frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
+
+// Aplicando o middleware de CORS
+app.use(cors(corsOptions));
+
+// Tratando as requisições `OPTIONS` (preflight request)
+app.options('*', cors(corsOptions));
 
 app.use(cors());
 app.use(bodyParser.json());
