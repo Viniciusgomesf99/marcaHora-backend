@@ -177,6 +177,9 @@ app.post('/reserve-time', async (req, res) => {
           timeSlot.full = true; // Você pode adicionar uma flag 'full' para marcar horários completos
         }
 
+        // **Força Mongoose a detectar as alterações**
+        list.markModified('daysAndTimes');
+
         // Salvar as alterações no MongoDB
         await list.save();
         res.send({ message: `Horário ${time} reservado por ${userName}` });
