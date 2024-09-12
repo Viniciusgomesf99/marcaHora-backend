@@ -138,9 +138,6 @@ app.post('/reserve-time', async (req, res) => {
     const list = await List.findOne({ id: listId });
 
     if (list) {
-      // Adicionando um log para verificar se o dia está corretamente na lista
-      console.log("Dias disponíveis na lista:", list.daysAndTimes);
-
       // Verifica se o dia existe no objeto daysAndTimes
       if (!list.daysAndTimes || !list.daysAndTimes.get(day)) {
         return res.status(400).send({ message: 'Dia não disponível para reservas.' });
@@ -169,11 +166,12 @@ app.post('/reserve-time', async (req, res) => {
         if (!timeSlot.reservedBy) {
           timeSlot.reservedBy = [];
         }
-        timeSlot.reservedBy.push(userName);
+        timeSlot.reservedBy.push(userName); // Adiciona o nome do usuário que fez a reserva
 
+        // NÃO REMOVA o horário se as vagas se esgotarem, apenas marque como cheio
         if (timeSlot.remaining === 0) {
-          // Remove o horário se as vagas se esgotarem
-          list.daysAndTimes.set(day, list.daysAndTimes.get(day).filter(t => t.time !== time));
+          // Opcional: Marcar como "indisponível", sem excluir
+          timeSlot.full = true; // Você pode adicionar uma flag 'full' para marcar horários completos
         }
 
         // Salvar as alterações no MongoDB
