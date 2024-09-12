@@ -138,13 +138,13 @@ app.post('/reserve-time', async (req, res) => {
     const list = await List.findOne({ id: listId });
 
     if (list) {
-      // Verifica se o dia existe no objeto daysAndTimes
-      if (!list.daysAndTimes || !list.daysAndTimes.get(day)) {
+      // Verifica se o dia existe no objeto daysAndTimes como um objeto e não Map
+      if (!list.daysAndTimes || !list.daysAndTimes[day]) {
         return res.status(400).send({ message: 'Dia não disponível para reservas.' });
       }
 
       // Verificar se o CPF já reservou algum horário, exceto se allowMultipleSelections estiver ativo
-      const userHasReservedOnDay = Object.values(list.daysAndTimes.get(day)).some(slot => 
+      const userHasReservedOnDay = list.daysAndTimes[day].some(slot =>
         slot.reservedBy && slot.reservedBy.some(reservation => reservation.cpf === cpf)
       );
 
@@ -153,7 +153,7 @@ app.post('/reserve-time', async (req, res) => {
       }
 
       // Encontrar o timeSlot no dia especificado
-      const timeSlot = list.daysAndTimes.get(day).find(t => t.time === time);
+      const timeSlot = list.daysAndTimes[day].find(t => t.time === time);
 
       if (timeSlot && timeSlot.remaining > 0) {
         // Verifica se o horário já está reservado por outro usuário e se múltiplas reservas são permitidas
