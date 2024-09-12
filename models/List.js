@@ -29,13 +29,16 @@ const listSchema = new mongoose.Schema({
   },
   daysAndTimes: {
     type: Map,
-    of: [
-      {
-        time: String,
-        remaining: Number,
-        reservedBy: [String] // Lista de usuários que reservaram este horário
-      }
-    ],
+    of: {
+      type: Array,
+      items: {
+        type: new mongoose.Schema({
+          time: String,
+          remaining: Number,
+          reservedBy: [String], // Lista de usuários que reservaram este horário
+        }),
+      },
+    },
     required: true,
   },
   allowMultipleSelections: {
