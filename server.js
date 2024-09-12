@@ -139,7 +139,7 @@ app.post('/reserve-time', async (req, res) => {
 
     if (list) {
       // Verifica se o dia existe no objeto daysAndTimes como um objeto e não Map
-      if (!list.daysAndTimes || !list.daysAndTimes[day]) {
+      if (!list.daysAndTimes || !list.daysAndTimes(day)) {
         return res.status(400).send({ message: 'Dia não disponível para reservas.' });
       }
 
