@@ -64,17 +64,24 @@ app.post('/create-list', async (req, res) => {
   }
 });
 
-app.get('/view-list/:id', (req, res) => {
+app.get('/view-list/:id', async (req, res) => {
   const listId = req.params.id;
-  const foundList = lists.find(list => list.id === listId);
 
-  // Verificando se a lista foi encontrada
-  console.log("Lista encontrada para o ID:", listId, foundList);
+  try {
+    // Buscando a lista pelo campo `id` no MongoDB
+    const foundList = await List.findOne({ id: listId });
 
-  if (foundList) {
-    res.send({ list: foundList });
-  } else {
-    res.status(404).send({ message: 'Lista não encontrada.' });
+    // Verificando se a lista foi encontrada
+    console.log("Lista encontrada para o ID:", listId, foundList);
+
+    if (foundList) {
+      res.send({ list: foundList });
+    } else {
+      res.status(404).send({ message: 'Lista não encontrada.' });
+    }
+  } catch (error) {
+    console.error('Erro ao buscar a lista no MongoDB:', error);
+    res.status(500).send({ message: 'Erro ao buscar a lista.' });
   }
 });
 
