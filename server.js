@@ -146,7 +146,7 @@ app.post('/reserve-time', async (req, res) => {
       }
 
       // Verificar se o CPF já reservou algum horário, exceto se allowMultipleSelections estiver ativo
-      const userHasReservedOnDay = list.daysAndTimes[day].some(slot =>
+      const userHasReservedOnDay = availableTimesForDay.some(slot =>
         slot.reservedBy && slot.reservedBy.some(reservation => reservation.cpf === cpf)
       );
 
