@@ -24,35 +24,21 @@ const listSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  password: {
-    type: String,
-    required: true, // Tornando a senha obrigatória, já que está no objeto do frontend
-  },
-  days: {
-    type: [String], // Array de dias
-    required: true,
-  },
+  password: String, // Se necessário
   daysAndTimes: {
     type: Map,
-    of: [{
-      time: String,
-      remaining: Number,
-      reservedBy: [String], // Usuários que reservaram este horário
-    }],
+    of: [
+      {
+        time: String,
+        remaining: Number,
+        reservedBy: [String] // Array de nomes dos usuários que reservaram
+      }
+    ],
     required: true,
   },
-  allowMultipleSelections: {
-    type: Boolean,
-    default: false,
-  },
-  allowMultipleBookings: {
-    type: Boolean,
-    default: false,
-  },
-  maxSelectionsPerPerson: {
-    type: Number,
-    default: 1, // Valor padrão de 1 caso não seja especificado
-  },
+  allowMultipleSelections: Boolean,
+  allowMultipleBookings: Boolean,
+  maxSelectionsPerPerson: Number,
   createdAt: {
     type: Date,
     default: Date.now,
